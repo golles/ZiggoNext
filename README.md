@@ -1,7 +1,11 @@
 # Ziggo Mediabox Next
 
 ## Description
-A media_player component for Home Assistant that creates media_players for each Ziggo Media Box in your account.
+A media_player component for Home Assistant that creates media_players for each Ziggo Media Box Next in your account.
+
+## Prerequisites
+- You need a Ziggo account with a Ziggo Media Box Next.
+- The energy mode needs to be set to high ("Hoog" in Dutch), otherwise you are not able to switch the device on in the media player.
 
 ## Installation
 
@@ -10,16 +14,19 @@ A media_player component for Home Assistant that creates media_players for each 
 3. In the custom_components directory (folder) create a new folder called ziggo_mediabox_next.
 4. Download all the files from the custom_components/ziggo_mediabox_next/ directory (folder) in this repository.
 5. Place the files you downloaded in the new directory (folder) you created.
-6. Restart Home Assistant
+6. Add media_player entry to configuration (see below)
+7. Restart Home Assistant
 
 ## Configuration
 ```yaml
 media_player:
   - platform: ziggo_mediabox_next
-    username: your@email.adr
-    password: YourP@ssword
+    username: !secret ziggo_username
+    password: !secret ziggo password
   
 ```
+Media players are generated with a name based on the id Ziggo provided. You can add a ```friendly_name``` in the customize section in your configuration.
+
 ### Parameters
 | Parameter | Type | Required | Description
 | --- | ----------- | --- | --- |
