@@ -1,7 +1,9 @@
 import logging
 import json
 import random
-from .id_maker import IdMaker
+import requests
+
+from .idmaker import makeId
 from homeassistant.components.media_player import MediaPlayerDevice
 from homeassistant.const import (
     STATE_PLAYING,
@@ -13,6 +15,7 @@ from homeassistant.const import (
 )
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_TVSHOW,
+    MEDIA_TYPE_CHANNEL,
     SUPPORT_PLAY,
     SUPPORT_PAUSE,
     SUPPORT_PLAY_MEDIA,
@@ -43,6 +46,7 @@ MEDIA_KEY_STOP = "MediaStop"  # Not yet implemented
 MEDIA_KEY_REWIND = "MediaRewind"  # Not yet implemented
 MEDIA_KEY_FAST_FORWARD = "MediaFastForward"  # Not yet implemented
 
+API_URL_LISTING_FORMAT = "https://web-api-prod-obo.horizon.tv/oesp/v3/NL/nld/web/listings/?byStationId={stationId}&byScCridImi={id}"
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -67,16 +71,18 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
         self.__channelImage = None
         self.__sourceType = None
         self.__playSpeed = 0
+        self.__showTitle = None
 
     def update(self):
         if self.__state == "ONLINE_RUNNING":
             self.__channels = self.__update_channels_callback()
-            self.__channelImage = (
-                self.__channels[self.__currentChannelId].streamImage
-                + "?"
-                + str(random.randrange(10000000))
-            )
-        _LOGGER.debug(self.state)
+
+    def updateChannelImage(self):
+        self.__channelImage = (
+            self.__channels[self.__currentChannelId].streamImage
+            + "?"
+            + str(random.randrange(10000000))
+        )
 
     def __publish(self, topic, payload):
         self.__publish_callback(topic, payload)
@@ -123,12 +129,26 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
         )
 
     def handleStateMessage(self, statusJson):
-        self.__currentChannelId = statusJson["playerState"]["source"]["channelId"]
-        self.__sourceType = statusJson["playerState"]["sourceType"]
-        self.__playSpeed = statusJson["playerState"]["speed"]
-        _LOGGER.debug(self.__currentChannelId)
-        _LOGGER.debug(self.__sourceType)
-        _LOGGER.debug(self.__playSpeed)
+        playerState = statusJson["playerState"]
+        source = playerState["source"]
+        self.__currentChannelId = source["channelId"]
+        self.__sourceType = playerState["sourceType"]
+        self.__playSpeed = playerState["speed"]
+        eventId = source["eventId"]
+        self.__showTitle = self.getTitle(eventId)
+        self.updateChannelImage()
+        self.update()
+
+    def getTitle(self, scCridImi):
+        r = requests.get(
+            API_URL_LISTING_FORMAT.format(
+                stationId=self.__currentChannelId, id=scCridImi
+            )
+        )
+        if r.status_code == 200:
+            content = r.json()
+            return content["listings"][0]["program"]["title"]
+        return None
 
     @property
     def available(self):
@@ -137,12 +157,10 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
 
     def turn_on(self):
         """Turn the media player on."""
-        _LOGGER.debug("Turning the media player on.")
         self.__send_key(MEDIA_KEY_POWER)
 
     def turn_off(self):
         """Turn the media player off."""
-        _LOGGER.info("Turning the media player off.")
         self.__send_key(MEDIA_KEY_POWER)
 
     @property
@@ -156,6 +174,11 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
         if self.__currentChannelId:
             return self.__channels[self.__currentChannelId].title
         return None
+
+    @property
+    def media_series_title(self):
+        """Title of series of current playing media, TV show only."""
+        return self.__showTitle
 
     @property
     def source(self):
@@ -182,12 +205,10 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
 
     def select_source(self, source):
         """Select the channel."""
-        _LOGGER.info("Switching source to '" + source + "'")
         channel = [src for src in self.__channels.values() if src.title == source][0]
-        _LOGGER.debug(str(channel))
         payload = (
             '{"id":"'
-            + IdMaker.make(8)
+            + makeId(8)
             + '","type":"CPE.pushToTV","source":{"clientId":"'
             + self.__mqtt_clientId
             + '","friendlyDeviceName":"NodeJs"},"status":{"sourceType":"linear","source":{"channelId":"'
@@ -196,32 +217,22 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
         )
 
         self.__publish("/" + self.__deviceId, payload)
-        self.__currentChannelId = channel.serviceId
-        self.update()
 
     def media_play_pause(self):
         """Simulate play pause media player."""
-        _LOGGER.info("Play/pause the media player.")
-
         self.__send_key(MEDIA_KEY_PLAY_PAUSE)
 
     def media_next_track(self):
         """Send next track command."""
-        _LOGGER.info("Switching to the next channel.")
-
         self.__send_key(MEDIA_KEY_CHANNEL_UP)
         self.update()
 
     def media_previous_track(self):
         """Send previous track command."""
-        _LOGGER.info("Switching to the previous channel.")
         self.__send_key(MEDIA_KEY_CHANNEL_DOWN)
-        self.update()
 
     def media_play(self):
         self.__send_key(MEDIA_KEY_PLAY_PAUSE)
-        self.update()
 
     def media_pause(self):
         self.__send_key(MEDIA_KEY_PLAY_PAUSE)
-        self.update()
