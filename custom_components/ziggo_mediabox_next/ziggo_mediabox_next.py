@@ -211,7 +211,7 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
             + makeId(8)
             + '","type":"CPE.pushToTV","source":{"clientId":"'
             + self.__mqtt_clientId
-            + '","friendlyDeviceName":"NodeJs"},"status":{"sourceType":"linear","source":{"channelId":"'
+            + '","friendlyDeviceName":"Home Assistant"},"status":{"sourceType":"linear","source":{"channelId":"'
             + channel.serviceId
             + '"},"relativePosition":0,"speed":1}}'
         )
