@@ -47,6 +47,7 @@ MEDIA_KEY_REWIND = "MediaRewind"  # Not yet implemented
 MEDIA_KEY_FAST_FORWARD = "MediaFastForward"  # Not yet implemented
 
 API_URL_LISTING_FORMAT = "https://web-api-prod-obo.horizon.tv/oesp/v3/NL/nld/web/listings/?byStationId={stationId}&byScCridImi={id}"
+API_URL_RECORDING_FORMAT = "https://web-api-prod-obo.horizon.tv/oesp/v3/NL/nld/web/listings/?byScCridImi={id}"
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -104,8 +105,6 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
     def state(self):
         """Return the state of the player."""
         if self.__state == "ONLINE_RUNNING":
-            if self.__playSpeed == 0:
-                return STATE_PAUSED
             return STATE_PLAYING
         elif self.__state == "ONLINE_STANDBY":
             return STATE_OFF
@@ -131,12 +130,23 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
     def handleStateMessage(self, statusJson):
         playerState = statusJson["playerState"]
         source = playerState["source"]
-        self.__currentChannelId = source["channelId"]
         self.__sourceType = playerState["sourceType"]
         self.__playSpeed = playerState["speed"]
-        eventId = source["eventId"]
-        self.__showTitle = self.getTitle(eventId)
-        self.updateChannelImage()
+        if (playerState["sourceType"] == "replay"):
+            eventId = source["eventId"]
+            self.__currentChannelId = None
+            self.__showTitle = "ReplayTV: " + self.getRecordingTitle(eventId)
+            self.__channelImage = self.getRecordingImage(eventId)
+        elif (playerState["sourceType"] == "nDVR"):
+            recordingId = source["recordingId"]
+            self.__currentChannelId = None
+            self.__showTitle = "Recording: " + self.getRecordingTitle(recordingId)
+            self.__channelImage = self.getRecordingImage(recordingId)
+        else:
+            eventId = source["eventId"]
+            self.__currentChannelId = source["channelId"]
+            self.__showTitle = self.getTitle(eventId)
+            self.updateChannelImage()
         self.update()
 
     def getTitle(self, scCridImi):
@@ -148,6 +158,28 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
         if r.status_code == 200:
             content = r.json()
             return content["listings"][0]["program"]["title"]
+        return None
+
+    def getRecordingTitle(self, scCridImi):
+        r = requests.get(
+            API_URL_RECORDING_FORMAT.format(
+                id=scCridImi
+            )
+        )
+        if r.status_code == 200:
+            content = r.json()
+            return content["listings"][0]["program"]["title"]
+        return None
+
+    def getRecordingImage(self, scCridImi):
+        r = requests.get(
+            API_URL_RECORDING_FORMAT.format(
+                id=scCridImi
+            )
+        )
+        if r.status_code == 200:
+            content = r.json()
+            return content["listings"][0]["program"]["images"][0]["url"]
         return None
 
     @property
@@ -217,6 +249,10 @@ class ZiggoMediaboxNext(MediaPlayerDevice):
         )
 
         self.__publish("/" + self.__deviceId, payload)
+
+        self.__currentChannelId = channel.serviceId
+        self.updateChannelImage()
+        self.update()
 
     def media_play_pause(self):
         """Simulate play pause media player."""
