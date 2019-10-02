@@ -36,6 +36,8 @@ Media players are generated with a name based on the id Ziggo provided. You can 
 ## Credits
 - The excellent start from [IIStevowII](https://github.com/IIStevowII/ziggo-mediabox-next) for a single settopbox inspired me!
 - The nodejs script [NextRemoteJs from basst85](https://github.com/basst85/NextRemoteJs/) used as reference to compare results.
+- Contributions by:
+  - [shortwood](https://github.com/shortwood)
 
 
 
