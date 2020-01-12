@@ -1,5 +1,6 @@
 """Support for interface with a Ziggo Mediabox Next."""
 import logging
+import random
 from homeassistant.components.media_player import MediaPlayerDevice
 
 from homeassistant.components.media_player.const import (
@@ -109,7 +110,9 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     @property
     def media_image_url(self):
         """Return the media image URL."""
-        return self.box_state.image
+		if self.box_state.image is not None:
+			return self.box_state.image + "?" + str(random(1000000))
+		return None
 
     @property
     def media_title(self):

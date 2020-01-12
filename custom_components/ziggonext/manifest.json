@@ -3,9 +3,7 @@
   "name": "Ziggo Next",
   "documentation": "",
   "requirements": [
-    "paho-mqtt==1.4.0",
-    "requests==2.22.0",
-    "ziggonext==0.1.1"
+    "ziggonext==0.1.2"
   ],
   "dependencies": [],
   "codeowners": ["@Sholofly"]
