@@ -1,6 +1,5 @@
 # Ziggo Mediabox Next
 
-<a href="https://www.buymeacoffee.com/sholofly" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" style="height: 25px !important;width: 108px !important;" ></a>
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
 ## Description
 A media_player component for Home Assistant that creates media_players for each Ziggo Media Box Next in your account.
@@ -46,3 +45,5 @@ Media players are generated with a name based on the id Ziggo provided. You can 
 - The nodejs script [NextRemoteJs from basst85](https://github.com/basst85/NextRemoteJs/) used as reference to compare results.
 - Contributions by:
   - [shortwood](https://github.com/shortwood)
+
+<a href="https://www.buymeacoffee.com/sholofly" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" style="height: 25px !important;width: 108px !important;" ></a>
