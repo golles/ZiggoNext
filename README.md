@@ -10,9 +10,9 @@ A media_player component for Home Assistant that creates media_players for each 
 
 ## HACS Installation
 1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
-2. Add 'Sholofly/ZiggoNext' to your custom repositories.
-3. Switch to the reposiries tab.
-4. Install the Integration
+2. In HACS, add 'Sholofly/ZiggoNext' to your custom repositories in the settings.
+3. Switch to the integrations tab.
+4. Install the Integration.
 
 ## Manual installation
 
