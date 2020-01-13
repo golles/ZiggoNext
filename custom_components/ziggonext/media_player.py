@@ -110,9 +110,9 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     @property
     def media_image_url(self):
         """Return the media image URL."""
-		if self.box_state.image is not None:
+        if self.box_state.image is not None:
             return self.box_state.image + "?" + str(random(1000000))
-		return None
+        return None
 
     @property
     def media_title(self):
