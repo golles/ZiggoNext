@@ -1,0 +1,7 @@
+{
+    "name": "ZiggoNext",
+    "country": ["NL"],
+    "iot_class": "Local Push",
+    "domains": ["media_player"],
+    "render_readme": true
+}
