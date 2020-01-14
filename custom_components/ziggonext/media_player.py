@@ -37,9 +37,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     players = []
     api = ZiggoNext(config[CONF_USERNAME], config[CONF_PASSWORD])
     api.initialize(_LOGGER)
-    time.sleep(5)
-    for box in api.settopBoxes.keys():
-        players.append(ZiggoNextMediaPlayer(box, api))
+    for boxId in api.settopBoxes.keys():
+        box = api.settopBoxes[boxId]
+        players.append(ZiggoNextMediaPlayer(boxId, box.name, api))
     add_entities(players, True)
 
 class ZiggoNextMediaPlayer(MediaPlayerDevice):
@@ -47,35 +47,35 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
 
     boxState: ZiggoNextBoxState
 
-    def __init__(self, boxId: str, api: ZiggoNext):
+    def __init__(self, boxId: str, name: str, api: ZiggoNext):
         """Init the media player"""
         self.api = api
         self.box_id = boxId
+        self.boxName = name
         self.box_state = None
-
+        
     def update(self):
         """Updating the box"""
         self.api.load_channels()
-        self.box_state = self.api.get_settop_box_state(self.box_id)
-        _LOGGER.debug(self.box_state.image)
+        box = self.api.settopBoxes[self.box_id]
+        self.box_state = box.state
 
     @property
     def name(self):
         """Return the name of the sensor."""
-        return self.box_id
+        return self.boxName
 
     @property
     def state(self):
         """Return the state of the player."""
-        if self.box_state is None:
-            return STATE_UNAVAILABLE
-        elif self.box_state.state == ONLINE_RUNNING:
+        state = STATE_UNAVAILABLE
+        if self.box_state.state == ONLINE_RUNNING:
             if self.box_state.paused:
-                return STATE_PAUSED
-            return STATE_PLAYING
+                state = STATE_PAUSED
+            state = STATE_PLAYING
         elif self.box_state.state == ONLINE_STANDBY:
-            return STATE_OFF
-        return STATE_UNAVAILABLE
+            state = STATE_OFF
+        return state
 
     @property
     def media_content_type(self):
@@ -97,7 +97,8 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     @property
     def available(self):
         """Return True if the device is available."""
-        return self.api.is_available(self.box_id)
+        available = self.api.is_available(self.box_id)
+        return available
 
     def turn_on(self):
         """Turn the media player on."""
