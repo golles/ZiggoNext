@@ -1,8 +1,8 @@
 # Ziggo Mediabox Next
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg)](https://github.com/custom-components/hacs)
 ## Description
-A media_player component for Home Assistant that creates media_players for each Ziggo Media Box Next in your account.
+A media player component for Home Assistant that creates a media player for each Ziggo Media Box Next in your account.
 
 ## Prerequisites
 - You need a Ziggo account with a Ziggo Media Box Next.
@@ -10,9 +10,9 @@ A media_player component for Home Assistant that creates media_players for each 
 
 ## HACS Installation
 1. Make sure you've installed [HACS](https://hacs.xyz/docs/installation/prerequisites)
-2. In HACS, add 'Sholofly/ZiggoNext' to your custom repositories in the settings.
-3. Switch to the integrations tab.
-4. Install the Integration.
+2. In the integrations tab, search for ZiggoNext.
+3. Install the Integration.
+4. Add media_player entry to configuration (see below)
 
 ## Manual installation
 
@@ -29,10 +29,9 @@ A media_player component for Home Assistant that creates media_players for each 
 media_player:
   - platform: ziggonext
     username: !secret ziggo_username
-    password: !secret ziggo_password
-  
+    password: !secret ziggo_password  
 ```
-Media players are generated with a name based on the id Ziggo provided. You can add a ```friendly_name``` in the customize section in your configuration.
+Media players id's are generated based on the name provided by Ziggo. You can adjust your box name in the settings on the ziggogo.tv website.
 
 ### Parameters
 | Parameter | Type | Required | Description
