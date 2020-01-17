@@ -24,6 +24,7 @@ class ZiggoSensor(Entity):
         self._boxId = boxId
         self._box = api.settopBoxes[boxId]
         self._state = None
+        self._api = api
 
     @property
     def name(self):
@@ -39,4 +40,4 @@ class ZiggoSensor(Entity):
         """Fetch new state data for the sensor.
         This is the only method that should fetch new data for Home Assistant.
         """
-        self._box = api.settopBoxes[boxId]
+        self._box = self._api.settopBoxes[self._boxId]
