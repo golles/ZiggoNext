@@ -2,7 +2,7 @@
 import logging
 import random
 from homeassistant.components.media_player import MediaPlayerDevice
-
+from .const import ZIGGO_API
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_TVSHOW,
     SUPPORT_NEXT_TRACK,
@@ -11,7 +11,7 @@ from homeassistant.components.media_player.const import (
     SUPPORT_PREVIOUS_TRACK,
     SUPPORT_SELECT_SOURCE,
     SUPPORT_TURN_OFF,
-    SUPPORT_TURN_ON,
+    SUPPORT_TURN_ON
 )
 
 from homeassistant.const import (
@@ -30,13 +30,11 @@ from ziggonext import (
     ONLINE_STANDBY
 )
 import time
-DOMAIN = "ziggonext"
 
 _LOGGER = logging.getLogger(__name__)
 def setup_platform(hass, config, add_entities, discovery_info=None):
     players = []
-    api = ZiggoNext(config[CONF_USERNAME], config[CONF_PASSWORD])
-    api.initialize(_LOGGER)
+    api = hass.data[ZIGGO_API]
     for boxId in api.settopBoxes.keys():
         box = api.settopBoxes[boxId]
         players.append(ZiggoNextMediaPlayer(boxId, box.name, api))
