@@ -65,14 +65,13 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     @property
     def state(self):
         """Return the state of the player."""
-        state = STATE_UNAVAILABLE
         if self.box_state == ONLINE_RUNNING:
             if self.box_info is not None and self.box_info.paused:
-                state = STATE_PAUSED
-            state = STATE_PLAYING
+                return STATE_PAUSED
+            return STATE_PLAYING
         elif self.box_state == ONLINE_STANDBY:
-            state = STATE_OFF
-        return state
+            return STATE_OFF
+        return STATE_UNAVAILABLE
 
     @property
     def media_content_type(self):
