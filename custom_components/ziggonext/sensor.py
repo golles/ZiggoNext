@@ -23,7 +23,6 @@ class ZiggoSensor(Entity):
         """Initialize the sensor."""
         self._boxId = boxId
         self._box = api.settopBoxes[boxId]
-        self._state = None
         self._api = api
 
     @property
@@ -34,7 +33,9 @@ class ZiggoSensor(Entity):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self._box.state.channelTitle
+        if self._box.info is not None:
+            return self._box.info.channelTitle
+        return None
 
     def update(self):
         """Fetch new state data for the sensor.

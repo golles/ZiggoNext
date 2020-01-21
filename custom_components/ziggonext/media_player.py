@@ -24,7 +24,6 @@ from homeassistant.const import (
 )
 
 from ziggonext import (
-	ZiggoNextBoxState,
 	ZiggoNext,
     ONLINE_RUNNING,
     ONLINE_STANDBY
@@ -43,20 +42,20 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class ZiggoNextMediaPlayer(MediaPlayerDevice):
     """The home assistant media player"""
 
-    boxState: ZiggoNextBoxState
-
     def __init__(self, boxId: str, name: str, api: ZiggoNext):
         """Init the media player"""
         self.api = api
         self.box_id = boxId
         self.boxName = name
         self.box_state = None
+        self.box_info = None
         
     def update(self):
         """Updating the box"""
         self.api.load_channels()
         box = self.api.settopBoxes[self.box_id]
         self.box_state = box.state
+        self.box_info = box.info
 
     @property
     def name(self):
@@ -67,11 +66,11 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     def state(self):
         """Return the state of the player."""
         state = STATE_UNAVAILABLE
-        if self.box_state.state == ONLINE_RUNNING:
-            if self.box_state.paused:
+        if self.box_state == ONLINE_RUNNING:
+            if self.box_info is not None and self.box_info.paused:
                 state = STATE_PAUSED
             state = STATE_PLAYING
-        elif self.box_state.state == ONLINE_STANDBY:
+        elif self.box_state == ONLINE_STANDBY:
             state = STATE_OFF
         return state
 
@@ -109,19 +108,19 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     @property
     def media_image_url(self):
         """Return the media image URL."""
-        if self.box_state.image is not None:
-            return self.box_state.image + "?" + str(random.randrange(1000000))
+        if self.box_info.image is not None:
+            return self.box_info.image + "?" + str(random.randrange(1000000))
         return None
 
     @property
     def media_title(self):
         """Return the media title."""
-        return self.box_state.title
+        return self.box_info.title
 
     @property
     def source(self):
         """Name of the current channel."""
-        return self.box_state.channelTitle
+        return self.box_info.channelTitle
 
     @property
     def source_list(self):
