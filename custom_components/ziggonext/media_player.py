@@ -5,6 +5,8 @@ from homeassistant.components.media_player import MediaPlayerDevice
 from .const import ZIGGO_API
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_TVSHOW,
+    MEDIA_TYPE_APP,
+    MEDIA_TYPE_CHANNEL,
     SUPPORT_NEXT_TRACK,
     SUPPORT_PAUSE,
     SUPPORT_PLAY,
@@ -76,10 +78,18 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     @property
     def media_content_type(self):
         """Return the media type."""
-        return MEDIA_TYPE_TVSHOW
+        if self.box_info.sourceType == "app":
+            return MEDIA_TYPE_APP
+        return MEDIA_TYPE_CHANNEL
 
     @property
     def supported_features(self):
+        if self.box_info.sourceType == "app":
+            return (
+                SUPPORT_TURN_ON
+                | SUPPORT_TURN_OFF
+            )
+        
         return (
             SUPPORT_PLAY
             | SUPPORT_PAUSE
@@ -89,6 +99,7 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
             | SUPPORT_NEXT_TRACK
             | SUPPORT_PREVIOUS_TRACK
         )
+
 
     @property
     def available(self):
@@ -141,3 +152,13 @@ class ZiggoNextMediaPlayer(MediaPlayerDevice):
     def media_previous_track(self):
         """Send previous track command."""
         self.api.previous_channel(self.box_id)
+    
+    @property
+    def device_state_attributes(self):
+        """Return device specific state attributes."""
+        return {
+            "play_mode": self.box_info.sourceType,
+            "channel": self.box_info.channelTitle,
+            "title": self.box_info.title,
+            "image": self.box_info.image
+        }
