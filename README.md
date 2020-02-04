@@ -42,7 +42,9 @@ The id's for media_players and sensors are generated based on the name provided 
 | --- | ----------- | --- | --- |
 | username | string | yes | Your Ziggo username |
 | password | string | yes | Your Ziggo password |
-| country_code | string | no (default 'nl')| Your country code. Currently supported: nl, ch & be |
+| country_code | string | no (default 'nl')| Your country code. Currently supported: nl, ch, be-nl*, be-fr* |
+
+* Not tested
 
 ## Credits
 - The excellent start from [IIStevowII](https://github.com/IIStevowII/ziggo-mediabox-next) for a single settopbox inspired me!
