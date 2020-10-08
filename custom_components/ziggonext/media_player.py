@@ -2,6 +2,7 @@
 import logging
 import random
 from homeassistant.components.media_player import MediaPlayerEntity
+from homeassistant.core import callback
 from .const import ZIGGO_API
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_TVSHOW,
@@ -34,15 +35,24 @@ from ziggonext import (
 import time
 DOMAIN = "ziggonext"
 _LOGGER = logging.getLogger(__name__)
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     players = []
     api = hass.data[ZIGGO_API]
     for box in api.settop_boxes.values():
         players.append(ZiggoNextMediaPlayer(box, api))
-    add_entities(players, True)
+    async_add_entities(players, True)
 
 class ZiggoNextMediaPlayer(MediaPlayerEntity):
     """The home assistant media player."""
+    
+    @callback
+    def box_update_callback(self):
+        self.schedule_update_ha_state(True)
+
+    @property
+    def unique_id(self):
+        """Return the unique id."""
+        return self.box_id
 
     @property
     def device_info(self):
@@ -63,11 +73,16 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
         self.api = api
         self.box_id = box.box_id
         self.box_name = box.name
+    
+    async def async_added_to_hass(self):
+        """Use lifecycle hooks."""
         self._box.set_callback(self.box_update_callback)
 
-    def update(self):
+
+    async def async_update(self):
         """Update the box."""
-        self.api.load_channels()
+        #self.api.load_channels()
+        
 
     @property
     def name(self):
@@ -114,11 +129,11 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
         available = self.api.is_available(self.box_id)
         return available
 
-    def turn_on(self):
+    async def async_turn_on(self):
         """Turn the media player on."""
         self.api.turn_on(self.box_id)
 
-    def turn_off(self):
+    async def async_turn_off(self):
         """Turn the media player off."""
         self.api.turn_off(self.box_id)
 
@@ -147,30 +162,28 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
         """Return a list with available sources."""
         return [channel.title for channel in self.api.channels.values()]
 
-    def select_source(self, source):
+    async def async_select_source(self, source):
         """Select a new source."""
         self.api.select_source(source, self.box_id)
+        
 
-    def media_play(self):
+    async def async_media_play(self):
         """Play selected box."""
         self.api.play(self.box_id)
 
-    def media_pause(self):
+    async def async_media_pause(self):
         """Pause the given box."""
         self.api.pause(self.box_id)
 
-    def media_next_track(self):
+    async def async_media_next_track(self):
         """Send next track command."""
         self.api.next_channel(self.box_id)
 
-    def media_previous_track(self):
+    async def async_media_previous_track(self):
         """Send previous track command."""
         self.api.previous_channel(self.box_id)
 
-    @property
-    def unique_id(self):
-        """Return the unique id."""
-        return self.box_id
+    
 
     @property
     def device_state_attributes(self):
@@ -185,6 +198,3 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
     @property
     def should_poll(self):
         return True
-    
-    def box_update_callback(self):
-        self.schedule_update_ha_state(True)
