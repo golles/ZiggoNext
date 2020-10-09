@@ -1,6 +1,10 @@
 """Support for interface with a Ziggo Mediabox Next."""
 import logging
 import random
+import voluptuous as vol
+import time
+import homeassistant.helpers.config_validation as cv
+
 from homeassistant.components.media_player import MediaPlayerEntity
 from homeassistant.core import callback
 from .const import ZIGGO_API
@@ -14,7 +18,8 @@ from homeassistant.components.media_player.const import (
     SUPPORT_PREVIOUS_TRACK,
     SUPPORT_SELECT_SOURCE,
     SUPPORT_TURN_OFF,
-    SUPPORT_TURN_ON
+    SUPPORT_TURN_ON,
+    SUPPORT_PLAY_MEDIA,
 )
 
 from homeassistant.const import (
@@ -32,9 +37,9 @@ from ziggonext import (
     ONLINE_RUNNING,
     ONLINE_STANDBY
 )
-import time
 DOMAIN = "ziggonext"
 _LOGGER = logging.getLogger(__name__)
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     players = []
     api = hass.data[ZIGGO_API]
@@ -111,8 +116,14 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
     def supported_features(self):
         """Return the supported features."""
         if self._box.info.sourceType == "app":
-            return SUPPORT_TURN_ON | SUPPORT_TURN_OFF
-
+            return (
+                SUPPORT_PLAY
+                | SUPPORT_PAUSE
+                | SUPPORT_TURN_ON
+                | SUPPORT_TURN_OFF
+                | SUPPORT_SELECT_SOURCE
+                | SUPPORT_PLAY_MEDIA
+            )
         return (
             SUPPORT_PLAY
             | SUPPORT_PAUSE
@@ -121,6 +132,7 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
             | SUPPORT_SELECT_SOURCE
             | SUPPORT_NEXT_TRACK
             | SUPPORT_PREVIOUS_TRACK
+            | SUPPORT_PLAY_MEDIA
         )
 
     @property
@@ -183,7 +195,25 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
         """Send previous track command."""
         self.api.previous_channel(self.box_id)
 
-    
+    async def async_play_media(self, media_type, media_id, **kwargs):
+        """Support changing a channel."""
+        if media_type != MEDIA_TYPE_CHANNEL:
+            LOGGER.error("Unsupported media type")
+            return
+
+        # media_id should only be a channel number
+        try:
+            cv.positive_int(media_id)
+        except vol.Invalid:
+            LOGGER.error("Media ID must be positive integer")
+            return
+        
+        if self._box.info.sourceType == "app":
+            self.api._send_key_to_box(self.box_id, "TV")
+            time.sleep(1)
+            
+        for digit in media_id:
+            self.api._send_key_to_box(self.box_id, f"{digit}")
 
     @property
     def device_state_attributes(self):

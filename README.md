@@ -46,6 +46,14 @@ The id's for media_players and sensors are generated based on the name provided 
 
 * Not tested
 
+## Service to change channel
+```yaml
+service: media_player.play_media
+service_data:
+  entity_id: media_player.ziggobeneden
+  media_content_id: 401 # Any channel number, 'Netflix' or 'Videoland'
+  media_content_type: channel # Currently only channel supported
+```
 ## Credits
 - The excellent start from [IIStevowII](https://github.com/IIStevowII/ziggo-mediabox-next) for a single settopbox inspired me!
 - The nodejs script [NextRemoteJs from basst85](https://github.com/basst85/NextRemoteJs/) used as reference to compare results.
