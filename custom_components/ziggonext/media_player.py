@@ -5,12 +5,13 @@ import voluptuous as vol
 import time
 import homeassistant.helpers.config_validation as cv
 
-from homeassistant.components.media_player import MediaPlayerEntity
+from homeassistant.components.media_player import MediaPlayerEntity, BrowseMedia
 from homeassistant.core import callback
 from .const import ZIGGO_API
 from homeassistant.components.media_player.const import (
     MEDIA_TYPE_TVSHOW,
     MEDIA_TYPE_APP,
+    MEDIA_TYPE_EPISODE,
     MEDIA_TYPE_CHANNEL,
     SUPPORT_NEXT_TRACK,
     SUPPORT_PAUSE,
@@ -20,6 +21,9 @@ from homeassistant.components.media_player.const import (
     SUPPORT_TURN_OFF,
     SUPPORT_TURN_ON,
     SUPPORT_PLAY_MEDIA,
+    SUPPORT_BROWSE_MEDIA,
+    MEDIA_CLASS_DIRECTORY,
+    MEDIA_CLASS_EPISODE
 )
 
 from homeassistant.const import (
@@ -35,7 +39,9 @@ from ziggonext import (
 	ZiggoNext,
     ZiggoNextBox,
     ONLINE_RUNNING,
-    ONLINE_STANDBY
+    ONLINE_STANDBY,
+    ZiggoRecordingShow,
+    ZiggoRecordingSingle
 )
 DOMAIN = "ziggonext"
 _LOGGER = logging.getLogger(__name__)
@@ -58,6 +64,13 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
     def unique_id(self):
         """Return the unique id."""
         return self.box_id
+    @property
+    def media_image_remotely_accessible(self):
+        return True
+
+    @property
+    def device_class(self):
+        return "tv"
 
     @property
     def device_info(self):
@@ -110,7 +123,7 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
         """Return the media type."""
         # if self._box.info.sourceType == "app":
         #     return MEDIA_TYPE_APP
-        return MEDIA_TYPE_CHANNEL
+        return MEDIA_TYPE_EPISODE
 
     @property
     def supported_features(self):
@@ -123,6 +136,7 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
                 | SUPPORT_TURN_OFF
                 | SUPPORT_SELECT_SOURCE
                 | SUPPORT_PLAY_MEDIA
+                | SUPPORT_BROWSE_MEDIA
             )
         return (
             SUPPORT_PLAY
@@ -133,6 +147,7 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
             | SUPPORT_NEXT_TRACK
             | SUPPORT_PREVIOUS_TRACK
             | SUPPORT_PLAY_MEDIA
+            | SUPPORT_BROWSE_MEDIA
         )
 
     @property
@@ -197,23 +212,23 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
 
     async def async_play_media(self, media_type, media_id, **kwargs):
         """Support changing a channel."""
-        if media_type != MEDIA_TYPE_CHANNEL:
-            LOGGER.error("Unsupported media type")
-            return
-
-        # media_id should only be a channel number
-        try:
-            cv.positive_int(media_id)
-        except vol.Invalid:
-            LOGGER.error("Media ID must be positive integer")
-            return
-        
-        if self._box.info.sourceType == "app":
-            self.api._send_key_to_box(self.box_id, "TV")
-            time.sleep(1)
-            
-        for digit in media_id:
-            self.api._send_key_to_box(self.box_id, f"{digit}")
+        if media_type == "recording_episode":
+            self.api.play_recording(self.box_id, media_id)
+        elif media_type == MEDIA_TYPE_CHANNEL:
+            # media_id should only be a channel number
+            try:
+                cv.positive_int(media_id)
+            except vol.Invalid:
+                _LOGGER.error("Media ID must be positive integer")
+                return
+            if self._box.info.sourceType == "app":
+                self.api._send_key_to_box(self.box_id, "TV")
+                time.sleep(1)
+                
+            for digit in media_id:
+                self.api._send_key_to_box(self.box_id, f"{digit}")
+        else:
+            _LOGGER.error("Unsupported media type")
 
     @property
     def device_state_attributes(self):
@@ -228,3 +243,108 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
     @property
     def should_poll(self):
         return True
+    
+    async def async_browse_media(self, media_content_type=None, media_content_id=None):
+        if media_content_type in [None, "main"] :
+            self._recordings = await self.hass.async_add_executor_job(self.api.get_recordings)
+
+            main = BrowseMedia(
+                title="Recordings",
+                media_class = MEDIA_CLASS_DIRECTORY,
+                media_content_type= "main",
+                media_content_id= "main",
+                can_play=False,
+                can_expand=True,
+                children = [],
+                children_media_class = MEDIA_CLASS_DIRECTORY
+            )
+            singleRecordingsCount = 0
+            for recording in self._recordings:
+                if recording["type"] == "show":
+                    show = self._build_show_item(recording["show"])
+                    main.children.append(show)
+                elif recording["type"] == "recording":
+                   singleRecordingsCount+=1
+                else:
+                    _LOGGER.error("Unknown recording type")
+            
+            if singleRecordingsCount > 0:
+                singlecontainer =  BrowseMedia(
+                    title="Losse opnames",
+                    media_class = MEDIA_CLASS_DIRECTORY,
+                    media_content_type= "singles",
+                    media_content_id= "singles",
+                    can_play=False,
+                    can_expand=True,
+                    children_media_class = MEDIA_CLASS_EPISODE
+                )
+                main.children.append(singlecontainer)
+            return main
+        elif media_content_type == "show":
+            show_collection = await self._build_show_collection(media_content_id)
+            return show_collection
+        elif media_content_type == "singles":
+            single_collection = self._build_singles_collection()
+            return single_collection
+        else:
+            return None
+     
+    def _build_singles_collection(self):
+        """Create response payload to describe contents of a specific library.Used by async_browse_media."""
+        singles =  BrowseMedia(
+            title = "Losse opnames",
+            media_class = MEDIA_CLASS_DIRECTORY,
+            media_content_type= "singles",
+            media_content_id= "singles",
+            can_play=False,
+            can_expand=True,
+            children_media_class = MEDIA_CLASS_EPISODE,
+            children = []
+        )
+        for recording in self._recordings:
+            if recording["type"] != "recording":
+                continue
+            singles.children.append(
+                self._build_episode_item(recording["recording"])
+            )
+        return singles
+
+    async def _build_show_collection(self, media_content_id):
+        """Create response payload to describe contents of a specific library.Used by async_browse_media."""
+        payload = await self.hass.async_add_executor_job(self.api.get_show_recording, media_content_id)
+        ziggo_show = payload["show"]
+        show =  self._build_show_item(ziggo_show)
+        for child in ziggo_show.children:
+            show.children.append(
+                self._build_episode_item(child["recording"])
+            )
+        return show
+
+    def _build_show_item(self, ziggo_show:ZiggoRecordingShow):
+        """Create response payload to describe contents of a specific library.Used by async_browse_media."""
+        return BrowseMedia(
+            title=ziggo_show.title,
+            media_class = MEDIA_CLASS_DIRECTORY,
+            media_content_type= "show",
+            media_content_id= ziggo_show.media_group_id,
+            can_play=False,
+            can_expand=True,
+            thumbnail=ziggo_show.image,
+            children = [],
+            children_media_class = MEDIA_CLASS_EPISODE
+        ) 
+
+    def _build_episode_item(self, recording:ZiggoRecordingSingle):
+        """Create response payload to describe contents of a specific library.Used by async_browse_media."""
+        title = recording.title
+        if recording.season and recording.episode:
+            title = f"S{recording.season:02}E{recording.episode:02} - {title}"
+        return BrowseMedia(
+            title=title,
+            media_class=MEDIA_CLASS_EPISODE,
+            media_content_type= "recording_episode",
+            media_content_id= recording.recording_id,
+            can_play=True,
+            can_expand=False,
+            thumbnail=recording.image
+        )
