@@ -52,7 +52,7 @@ service: media_player.play_media
 service_data:
   entity_id: media_player.ziggobeneden
   media_content_id: 401 # Any channel number, 'Netflix' or 'Videoland'
-  media_content_type: channel # Currently only channel supported
+  media_content_type: channel # 'channel' when media_content_id is channelnumber, 'app' when media_content_id is 'Netflix' or 'Videoland' 
 ```
 ## Credits
 - The excellent start from [IIStevowII](https://github.com/IIStevowII/ziggo-mediabox-next) for a single settopbox inspired me!

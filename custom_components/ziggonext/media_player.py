@@ -214,6 +214,8 @@ class ZiggoNextMediaPlayer(MediaPlayerEntity):
         """Support changing a channel."""
         if media_type == "recording_episode":
             self.api.play_recording(self.box_id, media_id)
+        elif media_type == MEDIA_TYPE_APP:
+            self.api.select_source(media_id, self.box_id)
         elif media_type == MEDIA_TYPE_CHANNEL:
             # media_id should only be a channel number
             try:
