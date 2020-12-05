@@ -69,3 +69,4 @@ service_data:
 - The nodejs script [NextRemoteJs from basst85](https://github.com/basst85/NextRemoteJs/) used as reference to compare results.
 - Contributions by:
   - [shortwood](https://github.com/shortwood)
+  - [michael-geerts](https://github.com/michael-geerts)
