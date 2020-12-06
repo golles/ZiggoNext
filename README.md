@@ -63,6 +63,28 @@ service_data:
   media_content_type: channel # 'channel' when media_content_id is channelnumber, 'app' when media_content_id is 'Netflix' or 'Videoland' 
 ```
 
+## Custom services
+
+This service can be called to start a recording. Note that this shows a pop-up on screen and confirmation is required.
+```yaml
+service: ziggonext.record
+service_data:
+  entity_id: media_player.ziggobeneden
+```
+
+This service can be called to rewind or fast-forward. 
+Note that this command can be called multiple times to speed up.
+To stop this action, you can call the standard media_player.play service on the same entity.
+```yaml
+service: ziggonext.rewind
+service_data:
+  entity_id: media_player.ziggobeneden
+
+service: ziggonext.fast_forward
+service_data:
+  entity_id: media_player.ziggobeneden
+```
+
 ## Credits
 
 - The excellent start from [IIStevowII](https://github.com/IIStevowII/ziggo-mediabox-next) for a single settopbox inspired me!
