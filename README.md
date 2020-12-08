@@ -66,6 +66,7 @@ service_data:
 ## Custom services
 
 This service can be called to start a recording. Note that this shows a pop-up on screen and confirmation is required.
+
 ```yaml
 service: ziggonext.record
 service_data:
@@ -75,6 +76,7 @@ service_data:
 This service can be called to rewind or fast-forward. 
 Note that this command can be called multiple times to speed up.
 To stop this action, you can call the standard media_player.play service on the same entity.
+
 ```yaml
 service: ziggonext.rewind
 service_data:
